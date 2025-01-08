@@ -7,6 +7,7 @@ pub struct Configuration {
     pub db_max_connection: u32,
     pub jwt_secret: String,
     pub jwt_expiration: i64,
+    pub server_port: String,
 }
 
 impl Configuration {
@@ -24,6 +25,7 @@ impl Configuration {
                 .unwrap_or_else(|_| "86400".to_string()) // 24 hours
                 .parse()
                 .expect("JWT_EXPIRATION must be a number"),
+            server_port: env::var("SERVER_PORT").unwrap_or_else(|_| "8080".to_string()),
         }
     }
 
