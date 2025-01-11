@@ -1,9 +1,12 @@
 mod config;
 mod controllers;
-mod services;
+mod middleware;
 mod models;
+mod router;
+mod services;
+mod utils;
 
-use axum::Router;
+use config::jwt::JwtConfig;
 use migration::{Migrator, MigratorTrait};
 
 use crate::config::config::Configuration;
@@ -34,7 +37,13 @@ async fn main() {
         }
     };
 
-    let app = Router::new().with_state(db); //share db connection with all handlers
+    //create jwt config
+    let jwt_config = JwtConfig::new(
+        configuration.jwt_secret.clone(),
+        configuration.jwt_expiration,
+    );
+
+    let app = router::create_router(db, jwt_config); //share db connection with all handlers
 
     let port = configuration.server_port;
     let addr = format!("0.0.0.0:{}", port);

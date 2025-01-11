@@ -20,7 +20,7 @@ impl Configuration {
                 .unwrap_or_else(|_| "10".to_string())
                 .parse()
                 .expect("DB_MAX_CONNECTIONS must be set"),
-            jwt_secret: env::var("JWT_SECRET").expect("JWT_SECRET must be set"),
+            jwt_secret: env::var("JWT_SECRET").expect(" JWT_SECRET must be set"),
             jwt_expiration: env::var("JWT_EXPIRATION")
                 .unwrap_or_else(|_| "86400".to_string()) // 24 hours
                 .parse()
@@ -30,9 +30,16 @@ impl Configuration {
     }
 
     pub async fn establish_connection(&self) -> Result<DatabaseConnection, DbErr> {
-        let conn = Database::connect(&self.database_url).await?;
+        let db_options = sea_orm::ConnectOptions::new(&self.database_url)
+            .max_connections(self.db_max_connection)
+            .min_connections(5)
+            .connect_timeout(std::time::Duration::from_secs(8))
+            .idle_timeout(std::time::Duration::from_secs(8))
+            .sqlx_logging(true)
+            .to_owned();
 
-        //Optional: Run migrations here
+        let conn = Database::connect(db_options).await?;
+
         Ok(conn)
     }
 }

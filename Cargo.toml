@@ -20,6 +20,11 @@ sea-orm = { version = "1.1.7", features = [
 serde = "1.0.218"
 serde_json = "1.0.140"
 tokio = "1.44.0"
-uuid = "1.15.1"
+uuid = {version = "1.15.1", features = [
+    "v4",
+]}
 validator = {version = "0.20.0", features = ["derive"]}
 migration = {path = "./migration"}
+jsonwebtoken = "9.3.1"
+async-trait = "0.1.87"
+bcrypt = "0.17.0"
