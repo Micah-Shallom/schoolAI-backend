@@ -1,4 +1,5 @@
-use crate::router::AppState;
+use crate::{models::blacklist::{Column, Entity as Blacklist}, router::AppState};
+use sea_orm::{EntityTrait, QueryFilter, ColumnTrait};
 use axum::{
     extract::State,
     http::{Request, StatusCode},
@@ -33,6 +34,16 @@ pub async fn auth_middleware(
     let token = auth_header
         .strip_prefix("Bearer ")
         .ok_or(StatusCode::UNAUTHORIZED)?;
+
+    let is_blacklisted =  Blacklist::find()
+        .filter(Column::Token.eq(token))
+        .one(&app_state.db)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    if is_blacklisted.is_some() {
+        return Err(StatusCode::UNAUTHORIZED);
+    }
 
     // Validate token
     let claims = jwt_config
