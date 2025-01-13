@@ -4,3 +4,4 @@ pub mod prelude;
 
 pub mod user;
 pub mod blacklist;
+pub mod features;

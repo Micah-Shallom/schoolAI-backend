@@ -1,5 +1,6 @@
 pub mod auth_routes;
 pub mod test_routes;
+pub mod features_route;
 
 use crate::config::jwt::JwtConfig;
 use axum::Router;
