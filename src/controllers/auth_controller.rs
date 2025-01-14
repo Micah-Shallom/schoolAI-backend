@@ -2,9 +2,9 @@ use axum::{extract::State, Json};
 use serde_json::json;
 
 use crate::{
-    models::user::{LoginRequest, RegisterRequest, LogoutRequest},
+    models::user::{LoginRequest, LogoutRequest, RegisterRequest},
     router::AppState,
-    services::auth_service::{login_user_service,register_user_service, logout_user_service},
+    services::auth_service::{login_user_service, logout_user_service, register_user_service},
     utils::{errors::AppError, response::success_response},
 };
 
@@ -36,7 +36,6 @@ pub async fn logout_user(
     State(state): State<AppState>,
     Json(request): Json<LogoutRequest>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    
     logout_user_service(&state.db, &state.jwt_config, request).await?;
 
     let response = json!({

@@ -1,25 +1,28 @@
-use crate::{models::blacklist::{Column, Entity as Blacklist}, router::AppState};
-use sea_orm::{EntityTrait, QueryFilter, ColumnTrait};
+use crate::{
+    models::blacklist::{Column, Entity as Blacklist},
+    router::AppState, utils::errors::AppError,
+};
 use axum::{
     extract::State,
     http::{Request, StatusCode},
     middleware::Next,
-    response::Response,
+    response::Response, Json,
 };
-use uuid::Uuid; // assuming AppState is defined with a jwt_config field
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use uuid::Uuid;
 
 #[derive(Clone, Debug)]
 pub struct AuthenticatedUser {
-    pub user_id: Uuid,
+    user_id: Uuid,
     pub email: String,
-    pub is_admin: bool,
+    is_admin: bool,
 }
 
 pub async fn auth_middleware(
     State(app_state): State<AppState>,
     mut request: Request<axum::body::Body>,
     next: Next,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, AppError> {
     // Extract jwt_config from the AppState
     let jwt_config = &app_state.jwt_config;
 
@@ -28,27 +31,27 @@ pub async fn auth_middleware(
         .headers()
         .get("Authorization")
         .and_then(|h| h.to_str().ok())
-        .ok_or(StatusCode::UNAUTHORIZED)?;
+        .ok_or(AppError::Unauthorized("Authorization header missing or invalid".to_string()))?;
 
     // Extract token
     let token = auth_header
         .strip_prefix("Bearer ")
-        .ok_or(StatusCode::UNAUTHORIZED)?;
+        .ok_or(AppError::Unauthorized("Bearer token missing or invalid".to_string()))?;
 
-    let is_blacklisted =  Blacklist::find()
+    let is_blacklisted = Blacklist::find()
         .filter(Column::Token.eq(token))
         .one(&app_state.db)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| AppError::InternalServerError(format!("Database query error {e}")) )?;
 
     if is_blacklisted.is_some() {
-        return Err(StatusCode::UNAUTHORIZED);
+        return Err(AppError::Unauthorized("Token has been blacklisted".to_string()));
     }
 
     // Validate token
     let claims = jwt_config
         .validate_token(token)
-        .map_err(|_| StatusCode::UNAUTHORIZED)?;
+        .map_err(|_| AppError::Unauthorized("Invalid or expired token".to_string()))?;
 
     // Create AuthenticatedUser and insert into request extensions
     let user = AuthenticatedUser {

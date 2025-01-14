@@ -1,6 +1,6 @@
 pub mod auth_routes;
+pub mod feature_routes;
 pub mod test_routes;
-pub mod features_route;
 
 use crate::config::jwt::JwtConfig;
 use axum::Router;
@@ -21,5 +21,6 @@ pub fn create_router(db: DatabaseConnection, jwt_config: JwtConfig) -> Router {
     Router::new()
         .merge(test_routes::routes(state.clone()))
         .merge(auth_routes::routes(state.clone()))
+        .merge(feature_routes::routes(state.clone()))
         .with_state(state)
 }

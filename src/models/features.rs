@@ -1,9 +1,6 @@
 use chrono::{DateTime, Utc};
-use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use validator::Validate;
-
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
 pub struct AcademicContentRequest {
@@ -17,6 +14,6 @@ pub struct AcademicContentRequest {
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
 pub struct AcademicContentResponse {
-    pub content: String, 
+    pub content: String,
     pub generated_at: DateTime<Utc>,
 }

@@ -31,12 +31,12 @@ impl Configuration {
 
     pub async fn establish_connection(&self) -> Result<DatabaseConnection, DbErr> {
         let db_options = sea_orm::ConnectOptions::new(&self.database_url)
-                .max_connections(self.db_max_connection)
-                .min_connections(5)
-                .connect_timeout(std::time::Duration::from_secs(8))
-                .idle_timeout(std::time::Duration::from_secs(8))
-                .sqlx_logging(true)
-                .to_owned();
+            .max_connections(self.db_max_connection)
+            .min_connections(5)
+            .connect_timeout(std::time::Duration::from_secs(8))
+            .idle_timeout(std::time::Duration::from_secs(8))
+            .sqlx_logging(true)
+            .to_owned();
 
         let conn = Database::connect(db_options).await?;
 

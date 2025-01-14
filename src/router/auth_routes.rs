@@ -1,5 +1,5 @@
 use super::AppState;
-use crate::controllers::auth_controller::{register_user, login_user, logout_user};
+use crate::controllers::auth_controller::{login_user, logout_user, register_user};
 use axum::{routing::post, Router};
 
 pub fn routes(_state: AppState) -> Router<AppState> {

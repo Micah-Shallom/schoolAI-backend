@@ -28,8 +28,6 @@ pub struct Model {
     pub is_admin: bool,
 }
 
-
-
 #[derive(Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}
 
@@ -61,7 +59,6 @@ pub struct LoginRequest {
 #[derive(Debug, Serialize, Deserialize, Validate)]
 pub struct LogoutRequest {
     pub token: String,
-
 }
 
 #[derive(Debug, Serialize)]
@@ -70,5 +67,5 @@ pub struct AuthResponse {
     pub user_id: Uuid,
     pub email: String,
     pub first_name: String,
-    pub last_name: String
+    pub last_name: String,
 }

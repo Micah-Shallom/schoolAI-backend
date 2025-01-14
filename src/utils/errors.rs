@@ -11,6 +11,7 @@ pub enum AppError {
     Unauthorized(String),
     Conflict(String),
     InternalServerError(String),
+    NotFound(String),
 }
 
 impl IntoResponse for AppError {
@@ -20,6 +21,7 @@ impl IntoResponse for AppError {
             Self::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
             Self::Conflict(msg) => (StatusCode::CONFLICT, msg),
             Self::InternalServerError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
+            Self::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
         };
 
         (status, Json(error_response(&message))).into_response()
