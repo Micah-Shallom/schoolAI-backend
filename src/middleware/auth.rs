@@ -1,12 +1,14 @@
 use crate::{
     models::blacklist::{Column, Entity as Blacklist},
-    router::AppState, utils::errors::AppError,
+    router::AppState,
+    utils::errors::AppError,
 };
 use axum::{
     extract::State,
     http::{Request, StatusCode},
     middleware::Next,
-    response::Response, Json,
+    response::Response,
+    Json,
 };
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use uuid::Uuid;
@@ -31,21 +33,27 @@ pub async fn auth_middleware(
         .headers()
         .get("Authorization")
         .and_then(|h| h.to_str().ok())
-        .ok_or(AppError::Unauthorized("Authorization header missing or invalid".to_string()))?;
+        .ok_or(AppError::Unauthorized(
+            "Authorization header missing or invalid".to_string(),
+        ))?;
 
     // Extract token
     let token = auth_header
         .strip_prefix("Bearer ")
-        .ok_or(AppError::Unauthorized("Bearer token missing or invalid".to_string()))?;
+        .ok_or(AppError::Unauthorized(
+            "Bearer token missing or invalid".to_string(),
+        ))?;
 
     let is_blacklisted = Blacklist::find()
         .filter(Column::Token.eq(token))
         .one(&app_state.db)
         .await
-        .map_err(|e| AppError::InternalServerError(format!("Database query error {e}")) )?;
+        .map_err(|e| AppError::InternalServerError(format!("Database query error {e}")))?;
 
     if is_blacklisted.is_some() {
-        return Err(AppError::Unauthorized("Token has been blacklisted".to_string()));
+        return Err(AppError::Unauthorized(
+            "Token has been blacklisted".to_string(),
+        ));
     }
 
     // Validate token

@@ -4,12 +4,12 @@ use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
 pub struct AcademicContentRequest {
-    grade_level: String,
-    content_type: String,
-    text_length: String,
-    topic: String,
-    standard_objective: String,
-    additional_criteria: Option<String>,
+    pub grade_level: String,
+    pub content_type: String,
+    pub text_length: String,
+    pub topic: String,
+    pub standard_objective: String,
+    pub additional_criteria: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Validate)]

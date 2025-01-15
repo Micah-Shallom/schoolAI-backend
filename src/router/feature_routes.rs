@@ -14,5 +14,7 @@ pub fn routes(state: AppState) -> Router<AppState> {
             auth_middleware,
         ));
 
-    protected_routes
+    Router::new()
+        .nest(state.version.as_str(), protected_routes)
+        .with_state(state)
 }

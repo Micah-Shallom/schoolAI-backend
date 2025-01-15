@@ -1,6 +1,5 @@
 use std::{fs, path::Path};
 
-
 use crate::utils::errors::AppError;
 
 pub async fn fetch_system_prompt(prompt_name: &str) -> Result<String, AppError> {
