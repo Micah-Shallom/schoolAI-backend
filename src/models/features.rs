@@ -10,6 +10,7 @@ pub struct AcademicContentRequest {
     pub topic: String,
     pub standard_objective: String,
     pub additional_criteria: Option<String>,
+    pub uploaded_content: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Validate)]

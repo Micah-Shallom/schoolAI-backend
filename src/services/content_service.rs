@@ -2,11 +2,16 @@ use sea_orm::DatabaseConnection;
 
 use crate::{models::features::AcademicContentRequest, utils::errors::AppError};
 
+use super::extract::fetch_system_prompt;
+
 pub async fn content_service(
     _db: &DatabaseConnection,
     req: AcademicContentRequest,
-    sys_prompt: String,
 ) -> Result<(), AppError> {
+    let sys_prompt = fetch_system_prompt("academic_content").await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to fetch system prompt: {:?}", e))
+    })?;
+
     let prompt = format!(
         "{}\n\nGrade level: {}\nLength: {}\nTopic: {}\nStandard objective: {}\nAdditional criteria: {}",
             sys_prompt,
