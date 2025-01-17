@@ -91,7 +91,6 @@ pub async fn generate_academic_content(
                     .and_then(|ext| ext.to_str())
                     .unwrap_or("tmp");
 
-
                 let temp_file = NamedTempFile::new().map_err(|e| {
                     AppError::InternalServerError(format!("Failed to create temp file: {}", e))
                 })?;
@@ -104,13 +103,11 @@ pub async fn generate_academic_content(
                         e
                     ))
                 })?;
-            
 
                 fs::write(&temp_file_path, &data).await.map_err(|e| {
                     AppError::InternalServerError(format!("Failed to write temp file: {}", e))
                 })?;
 
-               
                 let extracted_text =
                     extract_from_file(temp_file_path.to_str().ok_or_else(|| {
                         AppError::InternalServerError(
