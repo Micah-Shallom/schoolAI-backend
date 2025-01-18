@@ -19,17 +19,28 @@ impl RagStore {
     }
 
     pub fn from_chunks_and_embeddings(chunks: Vec<String>, embeddings: Vec<Vec<f32>>) -> Self {
-        assert_eq!(chunks.len(), embeddings.len(), "Chunks and embeddings must have the same length");
-        Self {chunks, embeddings}
+        assert_eq!(
+            chunks.len(),
+            embeddings.len(),
+            "Chunks and embeddings must have the same length"
+        );
+        Self { chunks, embeddings }
     }
 }
 
-
 pub fn cosine_similarity(vec1: &[f32], vec2: &[f32]) -> f32 {
-    let dot_product = vec1.iter().zip(vec2.iter()).map(|(a, b)| a * b).sum::<f32>();
+    let dot_product = vec1
+        .iter()
+        .zip(vec2.iter())
+        .map(|(a, b)| a * b)
+        .sum::<f32>();
     let norm1 = (vec1.iter().map(|x| x * x).sum::<f32>()).sqrt();
     let norm2 = (vec2.iter().map(|x| x * x).sum::<f32>()).sqrt();
-    if norm1 == 0.0 || norm2 == 0.0 { 0.0 } else { dot_product / (norm1 * norm2) }
+    if norm1 == 0.0 || norm2 == 0.0 {
+        0.0
+    } else {
+        dot_product / (norm1 * norm2)
+    }
 }
 
 pub fn retrieve_relevant_chunks(
@@ -38,9 +49,12 @@ pub fn retrieve_relevant_chunks(
     model: &TextEmbedding,
     top_k: usize,
 ) -> Result<Vec<String>, String> {
-    let query_embedding = model.embed(vec![query.to_string()], None)
-        .map_err(|e| format!("Failed to embed query: {}", e))?[0].clone();
-    let mut similarities: Vec<(usize, f32)> = store.embeddings
+    let query_embedding = model
+        .embed(vec![query.to_string()], None)
+        .map_err(|e| format!("Failed to embed query: {}", e))?[0]
+        .clone();
+    let mut similarities: Vec<(usize, f32)> = store
+        .embeddings
         .iter()
         .enumerate()
         .map(|(i, emb)| (i, cosine_similarity(&query_embedding, emb)))

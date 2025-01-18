@@ -1,12 +1,12 @@
 use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
 use std::vec;
 
-pub fn implement_rag(text: &str) -> Result<Vec<Vec<f32>>, String> {
+pub fn implement_rag(text: &str, model: &TextEmbedding) -> Result<Vec<Vec<f32>>, String> {
     let chunk_size = 500;
 
     let chunks = chunk_text(text, chunk_size);
 
-    let embeddings = generate_text_embeddings(chunks)?;
+    let embeddings = generate_text_embeddings(chunks, model)?;
 
     Ok(embeddings)
 }
@@ -29,14 +29,10 @@ pub fn chunk_text(text: &str, chunk_size: usize) -> Vec<String> {
         .collect()
 }
 
-pub fn generate_text_embeddings(documents: Vec<String>) -> Result<Vec<Vec<f32>>, String> {
-
-    // With custom InitOptions
-    let model = TextEmbedding::try_new(
-        InitOptions::new(EmbeddingModel::AllMiniLML6V2).with_show_download_progress(true),
-    )
-    .map_err(|e| format!("Failed to initialize embedding model: {}", e))?;
-
+pub fn generate_text_embeddings(
+    documents: Vec<String>,
+    model: &TextEmbedding,
+) -> Result<Vec<Vec<f32>>, String> {
     // Generate embeddings with the default batch size, 256
     let embeddings = model
         .embed(documents, None)

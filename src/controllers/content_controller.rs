@@ -9,10 +9,7 @@ use tokio::fs;
 use crate::{
     models::features::AcademicContentRequest,
     router::AppState,
-    services::{
-        content_service::content_service,
-        extract::{extract_from_file, fetch_system_prompt},
-    },
+    services::{content_service::content_service, extract::extract_from_file},
     utils::{errors::AppError, response::success_response},
 };
 
@@ -121,7 +118,7 @@ pub async fn generate_academic_content(
         }
     }
 
-    let response = content_service(&state.db, request).await?;
+    let response = content_service(&state.db, request, state.embedding_model.as_ref()).await?;
 
     let rd = serde_json::to_value(response)
         .map_err(|e| AppError::InternalServerError(format!("JSON serialization error: {}", e)))?;

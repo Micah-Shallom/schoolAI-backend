@@ -3,5 +3,6 @@
 pub mod prelude;
 
 pub mod blacklist;
+pub mod embeddings;
 pub mod features;
 pub mod user;
