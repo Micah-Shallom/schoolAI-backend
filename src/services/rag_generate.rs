@@ -1,14 +1,17 @@
-use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
+use fastembed::TextEmbedding;
 use std::vec;
 
-pub fn implement_rag(text: &str, model: &TextEmbedding) -> Result<Vec<Vec<f32>>, String> {
+pub fn implement_rag(
+    text: &str,
+    model: &TextEmbedding,
+) -> Result<(Vec<String>, Vec<Vec<f32>>), String> {
     let chunk_size = 500;
 
     let chunks = chunk_text(text, chunk_size);
 
-    let embeddings = generate_text_embeddings(chunks, model)?;
+    let embeddings = generate_text_embeddings(chunks.clone(), model)?;
 
-    Ok(embeddings)
+    Ok((chunks, embeddings))
 }
 
 pub fn chunk_text(text: &str, chunk_size: usize) -> Vec<String> {
@@ -38,8 +41,8 @@ pub fn generate_text_embeddings(
         .embed(documents, None)
         .map_err(|e| format!("Failed to generate embeddings: {}", e))?;
 
-    // println!("Embeddings length: {}", embeddings.len()); // -> Embeddings length: 4
-    // println!("Embedding dimension: {}", embeddings[0].len()); // -> Embedding dimension: 384
+    println!("Embeddings length: {}", embeddings.len()); // -> Embeddings length: 4
+    println!("Embedding dimension: {}", embeddings[0].len()); // -> Embedding dimension: 384
 
     Ok(embeddings)
 }

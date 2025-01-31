@@ -9,13 +9,13 @@ use std::{
 
 use pdf_extract::extract_text;
 
-pub async fn fetch_system_prompt(prompt_name: &str) -> Result<String, String> {
+pub async fn fetch_system_prompt(prompt_file_name: &str) -> Result<String, String> {
     let current_dir =
         env::current_dir().map_err(|err| format!("Failed to get current directory: {}", err))?;
 
     let base_dir = current_dir.join("src/services/prompts");
 
-    let file_path = base_dir.join(format!("{}.txt", prompt_name));
+    let file_path = base_dir.join(format!("{}.txt", prompt_file_name));
 
     match fs::read_to_string(&file_path) {
         Ok(content) => Ok(content),
@@ -25,7 +25,7 @@ pub async fn fetch_system_prompt(prompt_name: &str) -> Result<String, String> {
                 file_path.display(),
                 err
             ); //log the error
-            Err(format!("prompt file '{}.txt' not found", prompt_name))
+            Err(format!("prompt file '{}.txt' not found", prompt_file_name))
         }
     }
 }
@@ -37,8 +37,6 @@ pub fn extract_from_file(file_path: &str) -> Result<String, String> {
         .and_then(|ext| ext.to_str())
         .map(|ext| ext.to_lowercase())
         .unwrap_or_default();
-
-    println!("extension {:?}", extension);
 
     match extension.as_str() {
         "pdf" => {
