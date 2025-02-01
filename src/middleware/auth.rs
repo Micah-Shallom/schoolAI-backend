@@ -3,21 +3,15 @@ use crate::{
     router::AppState,
     utils::errors::AppError,
 };
-use axum::{
-    extract::State,
-    http::{Request, StatusCode},
-    middleware::Next,
-    response::Response,
-    Json,
-};
+use axum::{extract::State, http::Request, middleware::Next, response::Response};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use uuid::Uuid;
 
 #[derive(Clone, Debug)]
 pub struct AuthenticatedUser {
-    user_id: Uuid,
+    pub user_id: Uuid,
     pub email: String,
-    is_admin: bool,
+    pub is_admin: bool,
 }
 
 pub async fn auth_middleware(

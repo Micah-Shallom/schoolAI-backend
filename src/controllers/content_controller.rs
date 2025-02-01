@@ -3,6 +3,8 @@ use axum::{
     Json,
 };
 
+use serde_json::Value;
+
 use tempfile::NamedTempFile;
 use tokio::fs;
 
@@ -10,16 +12,17 @@ use crate::{
     models::features::AcademicContentRequest,
     router::AppState,
     services::{content_service::content_service, extract::extract_from_file},
-    utils::{errors::AppError, response::success_response},
+    utils::errors::AppError,
 };
 
 use std::path::Path;
 
+#[axum::debug_handler]
 pub async fn generate_academic_content(
     State(state): State<AppState>,
     // Json(request): Json<AcademicContentRequest>,
     mut multipart: Multipart,
-) -> Result<Json<serde_json::Value>, AppError> {
+) -> Result<Json<Value>, AppError> {
     let mut request = AcademicContentRequest {
         grade_level: String::new(),
         content_type: String::new(),
@@ -77,6 +80,11 @@ pub async fn generate_academic_content(
             }
             "uploaded_content" => {
                 let file_name = field.file_name().map(|name| name.to_string());
+
+                if file_name.clone().unwrap() == "" {
+                    AppError::InternalServerError("Empty file".to_string());
+                }
+
                 let data = &field
                     .bytes()
                     .await
@@ -118,10 +126,16 @@ pub async fn generate_academic_content(
         }
     }
 
-    let response = content_service(&state.db, request, state.embedding_model.as_ref()).await?;
+    let response = content_service(
+        &state.db,
+        request,
+        state.embedding_model.as_ref(),
+        state.rag_store,
+    )
+    .await?;
 
-    let rd = serde_json::to_value(response)
-        .map_err(|e| AppError::InternalServerError(format!("JSON serialization error: {}", e)))?;
-
-    Ok(Json(success_response(rd)))
+    Ok(Json(serde_json::json!({
+        "status": "success",
+        "data": response
+    })))
 }

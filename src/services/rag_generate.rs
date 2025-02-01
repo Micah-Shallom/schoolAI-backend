@@ -41,8 +41,5 @@ pub fn generate_text_embeddings(
         .embed(documents, None)
         .map_err(|e| format!("Failed to generate embeddings: {}", e))?;
 
-    println!("Embeddings length: {}", embeddings.len()); // -> Embeddings length: 4
-    println!("Embedding dimension: {}", embeddings[0].len()); // -> Embedding dimension: 384
-
     Ok(embeddings)
 }

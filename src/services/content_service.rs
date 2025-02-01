@@ -1,23 +1,25 @@
-use chrono::Utc;
-use fastembed::TextEmbedding;
-use sea_orm::{ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
-use sha2::{Digest, Sha256};
-use uuid::Uuid;
+use super::{extract::fetch_system_prompt, rag_generate::implement_rag};
 use crate::{
-    models::embeddings::{ActiveModel as EmbeddingActiveModel, Column, Entity as Embedding},
-    services::rag_store::{retrieve_relevant_chunks, RagStore},
+    models::embeddings::{Column, Entity as Embedding},
     models::features::AcademicContentRequest,
+    services::rag_store::{retrieve_relevant_chunks, RagStore},
     utils::errors::AppError,
 };
-use super::{extract::fetch_system_prompt, rag_generate::implement_rag};
+use fastembed::TextEmbedding;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sha2::{Digest, Sha256};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 pub async fn content_service(
     db: &DatabaseConnection,
     req: AcademicContentRequest,
     model: &TextEmbedding,
+    rag_store: Arc<Mutex<RagStore>>,
 ) -> Result<(), AppError> {
-    let sys_prompt = fetch_system_prompt("academic_content").await
-        .map_err(|e| AppError::InternalServerError(format!("Failed to fetch system prompt: {:?}", e)))?;
+    let sys_prompt = fetch_system_prompt("academic_content").await.map_err(|e| {
+        AppError::InternalServerError(format!("Failed to fetch system prompt: {:?}", e))
+    })?;
 
     let base_prompt = format!(
         "{}\n\nGrade level: {}\nLength: {}\nTopic: {}\nStandard objective: {}\nAdditional criteria: {}",
@@ -40,42 +42,43 @@ pub async fn content_service(
             .await
             .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?;
 
+        let mut store = rag_store.lock().await;
 
-        let store = if !cached.is_empty() {
-            let chunks = cached.iter().map(|c| c.chunk.clone()).collect::<Vec<_>>();
-            let embeddings = cached.iter().map(|c| c.embedding.clone()).collect::<Vec<_>>();
-            RagStore::from_chunks_and_embeddings(chunks, embeddings)
+        if cached.is_empty() {
+            println!("No cached embeddings found for file hash: {}", file_hash);
+
+            let (chunks, embeddings) = implement_rag(uploaded_content, model).map_err(|e| {
+                AppError::InternalServerError(format!("Failed to implement RAG: {}", e))
+            })?;
+
+            if chunks.is_empty() || embeddings.is_empty() {
+                return Err(AppError::BadRequest(
+                    "No chunks or embeddings generated.".to_string(),
+                ));
+            }
+
+            println!("Adding {} chunks and embeddings to the store", chunks.len());
+
+            store
+                .add_chunks_and_embeddings(db.clone(), &file_hash, chunks, embeddings)
+                .await;
         } else {
-            let (chunks, embeddings) = implement_rag(uploaded_content, model)
-                .map_err(|e| AppError::InternalServerError(format!("Failed to implement RAG: {}", e)))?;
+            println!("Using cached embeddings for file hash: {}", file_hash);
+        }
 
-            let values = chunks.iter().zip(embeddings.iter()).map(|(chunk, embedding)| {
-                EmbeddingActiveModel {
-                    id: Set(Uuid::new_v4()),
-                    file_hash: Set(file_hash.clone()),
-                    chunk: Set(chunk.clone()),
-                    embedding: Set(embedding.clone()),
-                    created_at: Set(Utc::now()),
-                    ..Default::default()
-                }
-            }).collect::<Vec<_>>();
-
-            Embedding::insert_many(values)
-                .exec(db)
-                .await
-                .map_err(|e| AppError::InternalServerError(format!("Failed to cache embeddings: {}", e)))?;
-
-            RagStore::from_chunks_and_embeddings(chunks, embeddings)
-        };
-
-
-        let relevant_chunks = retrieve_relevant_chunks(&req.topic, &store?, model)
-            .map_err(|e| AppError::InternalServerError(format!("Failed to retrieve chunks: {:?}", e)))?;
+        let relevant_chunks = retrieve_relevant_chunks(&req.topic, &store, model).map_err(|e| {
+            AppError::InternalServerError(format!("Failed to retrieve chunks: {:?}", e))
+        })?;
         let context = relevant_chunks.join("\n");
 
-        format!("{}\n\nRelevant context from uploaded content: {}", base_prompt, context)
+        format!(
+            "{}\n\nRelevant context from uploaded content: {}",
+            base_prompt, context
+        )
     } else {
-        return Err(AppError::BadRequest("Uploaded content is required to create a RagStore.".to_string()));
+        return Err(AppError::BadRequest(
+            "Uploaded content is required to create a RagStore.".to_string(),
+        ));
     };
 
     println!("Final Prompt: {:?}", final_prompt);

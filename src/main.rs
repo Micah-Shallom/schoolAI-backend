@@ -8,8 +8,11 @@ mod utils;
 
 use config::jwt::JwtConfig;
 use migration::{Migrator, MigratorTrait};
+use services::rag_store::RagStore;
 
 use crate::config::config::Configuration;
+use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() {
@@ -23,7 +26,15 @@ async fn main() {
         .await
         .expect("Failed to connect to database for migrations");
 
-    Migrator::up(&migrations_connection, None).await.unwrap();
+    match Migrator::up(&migrations_connection, None).await {
+        Ok(_) => {
+            println!("Migrations completed successfully");
+        }
+        Err(e) => {
+            eprintln!("Failed to run migrations: {}", e);
+            return;
+        }
+    }
 
     //establish db connection
     let db = match configuration.establish_connection().await {
@@ -37,13 +48,25 @@ async fn main() {
         }
     };
 
+    let rag_store = RagStore::new(db.clone(), 384)
+        .await
+        .expect("Failed to create RagStore");
+
     //create jwt config
     let jwt_config = JwtConfig::new(
         configuration.jwt_secret.clone(),
         configuration.jwt_expiration,
     );
 
-    let app = router::create_router(db, jwt_config); //share db connection with all handlers
+    // Initialize the embedding model
+    let embedding_model = Arc::new(
+        TextEmbedding::try_new(
+            InitOptions::new(EmbeddingModel::AllMiniLML6V2).with_show_download_progress(true),
+        )
+        .expect("Failed to initialize TextEmbedding"),
+    );
+
+    let app = router::create_router(db, jwt_config, embedding_model, rag_store); // share db connection with all handlers
 
     let port = configuration.server_port;
     let addr = format!("0.0.0.0:{}", port);
@@ -51,5 +74,7 @@ async fn main() {
 
     println!("Server listening on http://{}", addr);
 
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app.into_make_service())
+        .await
+        .unwrap();
 }
