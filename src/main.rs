@@ -9,10 +9,14 @@ mod utils;
 use config::jwt::JwtConfig;
 use migration::{Migrator, MigratorTrait};
 use services::rag_store::RagStore;
+use utils::errors::AppError;
 
 use crate::config::config::Configuration;
 use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
 use std::sync::Arc;
+use std::time::Duration;
+use openrouter_api::OpenRouterClient;
+
 
 #[tokio::main]
 async fn main() {
@@ -48,23 +52,34 @@ async fn main() {
         }
     };
 
-    let rag_store = RagStore::new(db.clone(), 384)
-        .await
-        .expect("Failed to create RagStore");
-
     //create jwt config
     let jwt_config = JwtConfig::new(
         configuration.jwt_secret.clone(),
         configuration.jwt_expiration,
     );
 
+    let rag_store = RagStore::new(db.clone(), 384)
+        .await
+        .expect("Failed to create RagStore");
+
+
     // Initialize the embedding model
     let embedding_model = Arc::new(
         TextEmbedding::try_new(
-            InitOptions::new(EmbeddingModel::AllMiniLML6V2).with_show_download_progress(true),
+            InitOptions::new(EmbeddingModel::AllMiniLML12V2Q).with_show_download_progress(true),
         )
         .expect("Failed to initialize TextEmbedding"),
     );
+
+
+    let api_key = std::env::var("OPENROUTER_API_KEY").expect("OPENROUTER_API_KEY must be set");
+
+    let client = OpenRouterClient::new()
+        .with_base_url("https://openrouter.ai/api/v1/")
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?
+        .with_timeout(Duration::from_secs(500))
+        .with_api_key(api_key)
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
 
     let app = router::create_router(db, jwt_config, embedding_model, rag_store); // share db connection with all handlers
 

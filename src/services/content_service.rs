@@ -4,12 +4,14 @@ use crate::{
     models::features::AcademicContentRequest,
     services::rag_store::{retrieve_relevant_chunks, RagStore},
     utils::errors::AppError,
+    llm_service::run_prompt,
 };
 use fastembed::TextEmbedding;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+
 
 pub async fn content_service(
     db: &DatabaseConnection,
@@ -31,7 +33,7 @@ pub async fn content_service(
         req.additional_criteria.unwrap_or("None".to_string())
     );
 
-    let final_prompt = if let Some(uploaded_content) = req.uploaded_content.as_deref() {
+    let ragged_prompt = if let Some(uploaded_content) = req.uploaded_content.as_deref() {
         let mut hasher = Sha256::new();
         hasher.update(uploaded_content);
         let file_hash = format!("{:x}", hasher.finalize());
@@ -61,7 +63,13 @@ pub async fn content_service(
 
             store
                 .add_chunks_and_embeddings(db.clone(), &file_hash, chunks, embeddings)
-                .await;
+                .await
+                .map_err(|e| {
+                    AppError::InternalServerError(format!(
+                        "Failed to add chunks and embeddings: {:?}",
+                        e
+                    ))
+                })?;
         } else {
             println!("Using cached embeddings for file hash: {}", file_hash);
         }
@@ -71,16 +79,16 @@ pub async fn content_service(
         })?;
         let context = relevant_chunks.join("\n");
 
-        format!(
-            "{}\n\nRelevant context from uploaded content: {}",
-            base_prompt, context
-        )
+        context
     } else {
         return Err(AppError::BadRequest(
             "Uploaded content is required to create a RagStore.".to_string(),
         ));
     };
 
-    println!("Final Prompt: {:?}", final_prompt);
+    let prompt = format!("{}\n\nRelevant context from uploaded content:\n{}", base_prompt, ragged_prompt);
+    
+    run_prompt()
+
     Ok(())
 }
