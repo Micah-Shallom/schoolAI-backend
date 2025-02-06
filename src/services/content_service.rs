@@ -1,12 +1,11 @@
 use super::{extract::fetch_system_prompt, rag_generate::implement_rag};
 use crate::{
-    models::embeddings::{Column, Entity as Embedding},
-    models::features::AcademicContentRequest,
-    services::rag_store::{retrieve_relevant_chunks, RagStore},
+    models::{embeddings::{Column, Entity as Embedding}, features::{AcademicContentRequest, AcademicContentResponse}},
+    services::{llm_service::run_prompt, rag_store::{retrieve_relevant_chunks, RagStore}},
     utils::errors::AppError,
-    llm_service::run_prompt,
 };
 use fastembed::TextEmbedding;
+use openrouter_api::client;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
@@ -18,7 +17,9 @@ pub async fn content_service(
     req: AcademicContentRequest,
     model: &TextEmbedding,
     rag_store: Arc<Mutex<RagStore>>,
-) -> Result<(), AppError> {
+    client: Arc<client::OpenRouterClient<client::Ready>>,
+) -> Result<AcademicContentResponse, AppError> {
+
     let sys_prompt = fetch_system_prompt("academic_content").await.map_err(|e| {
         AppError::InternalServerError(format!("Failed to fetch system prompt: {:?}", e))
     })?;
@@ -79,6 +80,8 @@ pub async fn content_service(
         })?;
         let context = relevant_chunks.join("\n");
 
+        println!("{:?}", context);
+
         context
     } else {
         return Err(AppError::BadRequest(
@@ -88,7 +91,10 @@ pub async fn content_service(
 
     let prompt = format!("{}\n\nRelevant context from uploaded content:\n{}", base_prompt, ragged_prompt);
     
-    run_prompt()
+    let response = run_prompt(&prompt, "qwen/qwq-32b:free", client)
+        .await
+        .map_err(|e| AppError::InternalServerError(format!("Failed to run prompt: {:?}", e)))?;
 
-    Ok(())
+
+    Ok(response)
 }

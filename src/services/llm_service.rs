@@ -1,20 +1,22 @@
 use chrono::Utc;
 use openrouter_api::types::chat::{ChatCompletionRequest, Message};
 use openrouter_api::OpenRouterClient;
-use std::time::{Duration, Instant};
+use std::ops::Deref;
+use std::sync::Arc;
+use std::time::Instant;
 
 use crate::models::features::AcademicContentResponse;
 use crate::utils::errors::AppError;
 
-pub async fn run_prompt(_prompt: &str, _model: &str) -> Result<AcademicContentResponse, AppError> {
+pub async fn run_prompt(prompt: &str, model: &str, client: Arc<OpenRouterClient<openrouter_api::Ready>>) -> Result<AcademicContentResponse, AppError> {
     dotenvy::dotenv().ok();
 
 
     let request = ChatCompletionRequest {
-        model: "qwen/qwen-2-7b-instruct:free".to_string(),
+        model: model.to_string(),
         messages: vec![Message {
             role: "user".to_string(),
-            content: "generate a curriculum for a 8th grade class for computer science".to_string(),
+            content: prompt.to_string(),
             name: None,
             tool_calls: None,
         }],
@@ -28,7 +30,8 @@ pub async fn run_prompt(_prompt: &str, _model: &str) -> Result<AcademicContentRe
 
     let start_time = Instant::now();
 
-    let response = client
+    let response = client.deref()
+        .chat().map_err(|e| AppError::InternalServerError(e.to_string()))?
         .chat_completion(request)
         .await
         .map_err(|e| AppError::InternalServerError(e.to_string()))?;

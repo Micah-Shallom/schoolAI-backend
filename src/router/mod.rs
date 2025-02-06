@@ -3,6 +3,7 @@ pub mod feature_routes;
 pub mod test_routes;
 
 use std::sync::Arc;
+use openrouter_api::OpenRouterClient;
 use tokio::sync::Mutex;
 
 use crate::{
@@ -20,6 +21,7 @@ pub struct AppState {
     pub jwt_config: JwtConfig,
     pub version: String,
     pub rag_store: Arc<Mutex<RagStore>>,
+    pub client: Arc<OpenRouterClient<openrouter_api::Ready>>,
 }
 
 pub fn create_router(
@@ -27,6 +29,7 @@ pub fn create_router(
     jwt_config: JwtConfig,
     embedding_model: Arc<TextEmbedding>,
     rag_store: Arc<Mutex<RagStore>>,
+    client : Arc<OpenRouterClient<openrouter_api::Ready>>,
 ) -> Router {
     let state = AppState {
         db: db.clone(),
@@ -34,7 +37,9 @@ pub fn create_router(
         version: String::from("/api/v1"),
         embedding_model,
         rag_store,
+        client,
     };
+
 
     Router::new()
         .merge(test_routes::routes(state.clone()))

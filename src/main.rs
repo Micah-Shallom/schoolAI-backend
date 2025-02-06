@@ -58,6 +58,7 @@ async fn main() {
         configuration.jwt_expiration,
     );
 
+    //initialize the rag generator
     let rag_store = RagStore::new(db.clone(), 384)
         .await
         .expect("Failed to create RagStore");
@@ -76,12 +77,20 @@ async fn main() {
 
     let client = OpenRouterClient::new()
         .with_base_url("https://openrouter.ai/api/v1/")
-        .map_err(|e| AppError::InternalServerError(e.to_string()))?
+        .map_err(|e| AppError::InternalServerError(e.to_string()))
+        .unwrap_or_else(|e| {
+            eprintln!("Failed to create OpenRouterClient: {:?}", e);
+            std::process::exit(1);
+        })
         .with_timeout(Duration::from_secs(500))
         .with_api_key(api_key)
-        .map_err(|e| AppError::InternalServerError(e.to_string()))?;
+        .map_err(|e| AppError::InternalServerError(e.to_string()))
+        .unwrap_or_else(|e| {
+            eprintln!("Failed to configure OpenRouterClient: {:?}", e);
+            std::process::exit(1);
+        });
 
-    let app = router::create_router(db, jwt_config, embedding_model, rag_store); // share db connection with all handlers
+    let app = router::create_router(db, jwt_config, embedding_model, rag_store, Arc::new(client)); // share db connection with all handlers
 
     let port = configuration.server_port;
     let addr = format!("0.0.0.0:{}", port);

@@ -131,6 +131,7 @@ pub async fn generate_academic_content(
         request,
         state.embedding_model.as_ref(),
         state.rag_store,
+        state.client,
     )
     .await?;
 
