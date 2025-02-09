@@ -13,8 +13,17 @@ pub struct AcademicContentRequest {
     pub uploaded_content: Option<String>,
 }
 
+pub struct McqGeneratorRequest {
+    pub grade_level: String,
+    pub number_of_questions: i32,
+    pub topic: String,
+    pub standard_objective: String,
+    pub additional_criteria: Option<String>,
+    pub uploaded_content: Option<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Validate)]
-pub struct AcademicContentResponse {
+pub struct GeneratedResponse {
     pub content: String,
     pub generated_at: DateTime<Utc>,
 }

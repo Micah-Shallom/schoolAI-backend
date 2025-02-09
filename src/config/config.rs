@@ -8,6 +8,8 @@ pub struct Configuration {
     pub jwt_secret: String,
     pub jwt_expiration: i64,
     pub server_port: String,
+    pub magic_slide_access_id: String,
+    pub magic_slide_base_url: String,
 }
 
 impl Configuration {
@@ -26,6 +28,8 @@ impl Configuration {
                 .parse()
                 .expect("JWT_EXPIRATION must be a number"),
             server_port: env::var("SERVER_PORT").unwrap_or_else(|_| "8080".to_string()),
+            magic_slide_access_id: env::var("Magic_Slide_Access_ID").unwrap(),
+            magic_slide_base_url: env::var("Magic_Slide_Base_URL").unwrap(),
         }
     }
 

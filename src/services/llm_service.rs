@@ -5,12 +5,15 @@ use std::ops::Deref;
 use std::sync::Arc;
 use std::time::Instant;
 
-use crate::models::features::AcademicContentResponse;
+use crate::models::features::GeneratedResponse;
 use crate::utils::errors::AppError;
 
-pub async fn run_prompt(prompt: &str, model: &str, client: Arc<OpenRouterClient<openrouter_api::Ready>>) -> Result<AcademicContentResponse, AppError> {
+pub async fn run_prompt(
+    prompt: &str,
+    model: &str,
+    client: Arc<OpenRouterClient<openrouter_api::Ready>>,
+) -> Result<GeneratedResponse, AppError> {
     dotenvy::dotenv().ok();
-
 
     let request = ChatCompletionRequest {
         model: model.to_string(),
@@ -30,8 +33,10 @@ pub async fn run_prompt(prompt: &str, model: &str, client: Arc<OpenRouterClient<
 
     let start_time = Instant::now();
 
-    let response = client.deref()
-        .chat().map_err(|e| AppError::InternalServerError(e.to_string()))?
+    let response = client
+        .deref()
+        .chat()
+        .map_err(|e| AppError::InternalServerError(e.to_string()))?
         .chat_completion(request)
         .await
         .map_err(|e| AppError::InternalServerError(e.to_string()))?;
@@ -42,7 +47,7 @@ pub async fn run_prompt(prompt: &str, model: &str, client: Arc<OpenRouterClient<
             println!("Chat response: {}", choice.message.content);
             let content = choice.message.content.clone();
             println!("LLM response received in {:2?}", duration);
-            Ok(AcademicContentResponse {
+            Ok(GeneratedResponse {
                 content,
                 generated_at: Utc::now(),
             })

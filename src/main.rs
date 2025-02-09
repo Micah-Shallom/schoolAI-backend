@@ -13,10 +13,9 @@ use utils::errors::AppError;
 
 use crate::config::config::Configuration;
 use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
+use openrouter_api::OpenRouterClient;
 use std::sync::Arc;
 use std::time::Duration;
-use openrouter_api::OpenRouterClient;
-
 
 #[tokio::main]
 async fn main() {
@@ -63,7 +62,6 @@ async fn main() {
         .await
         .expect("Failed to create RagStore");
 
-
     // Initialize the embedding model
     let embedding_model = Arc::new(
         TextEmbedding::try_new(
@@ -71,7 +69,6 @@ async fn main() {
         )
         .expect("Failed to initialize TextEmbedding"),
     );
-
 
     let api_key = std::env::var("OPENROUTER_API_KEY").expect("OPENROUTER_API_KEY must be set");
 

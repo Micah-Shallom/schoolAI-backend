@@ -2,7 +2,7 @@ use super::{extract::fetch_system_prompt, rag_generate::implement_rag};
 use crate::{
     models::{
         embeddings::{Column, Entity as Embedding},
-        features::{AcademicContentRequest, GeneratedResponse},
+        features::{GeneratedResponse, McqGeneratorRequest},
     },
     services::{
         llm_service::run_prompt,
@@ -17,25 +17,25 @@ use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-pub async fn content_service(
+pub async fn mcq_service(
     db: &DatabaseConnection,
-    req: AcademicContentRequest,
+    req: McqGeneratorRequest,
     model: &TextEmbedding,
     rag_store: Arc<Mutex<RagStore>>,
     client: Arc<client::OpenRouterClient<client::Ready>>,
 ) -> Result<GeneratedResponse, AppError> {
-    let sys_prompt = fetch_system_prompt("academic_content").await.map_err(|e| {
+    let sys_prompt = fetch_system_prompt("mcq").await.map_err(|e| {
         AppError::InternalServerError(format!("Failed to fetch system prompt: {:?}", e))
     })?;
 
     let base_prompt = format!(
-        "{}\n\nGrade level: {}\nLength: {}\nTopic: {}\nStandard objective: {}\nAdditional criteria: {}",
+        "{}\n\nGrade level: {}\n Number Of Questions: {}\nTopic: {}\nStandard objective: {}\nAdditional criteria: {}",
         sys_prompt,
         req.grade_level,
-        req.text_length,
+        req.number_of_questions,
         req.topic,
         req.standard_objective,
-        req.additional_criteria.unwrap_or("None".to_string())
+        req.additional_criteria.unwrap_or("None".to_string()),
     );
 
     let ragged_prompt = if let Some(uploaded_content) = req.uploaded_content.as_deref() {

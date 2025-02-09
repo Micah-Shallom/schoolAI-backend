@@ -105,7 +105,7 @@ impl RagStore {
     ) -> Result<(), AppError> {
         if embeddings.len() != chunks.len() {
             return Err(AppError::InternalServerError(
-                "Chunks and embeddings must have equal dimenstions".to_string(),
+                "Chunks and embeddings must have equal dimensions".to_string(),
             ));
         }
 
