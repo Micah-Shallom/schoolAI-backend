@@ -37,8 +37,8 @@ impl Configuration {
         let db_options = sea_orm::ConnectOptions::new(&self.database_url)
             .max_connections(self.db_max_connection)
             .min_connections(5)
-            .connect_timeout(std::time::Duration::from_secs(8))
-            .idle_timeout(std::time::Duration::from_secs(8))
+            .connect_timeout(std::time::Duration::from_secs(30))
+            .idle_timeout(std::time::Duration::from_secs(30))
             .sqlx_logging(true)
             .to_owned();
 

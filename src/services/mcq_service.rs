@@ -99,8 +99,6 @@ pub async fn mcq_service(
         })?;
         let context = relevant_chunks.join("\n");
 
-        println!("{:?}", context);
-
         context
     } else {
         return Err(AppError::BadRequest(

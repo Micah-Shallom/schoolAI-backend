@@ -44,7 +44,6 @@ pub async fn run_prompt(
 
     match response.choices.first() {
         Some(choice) => {
-            println!("Chat response: {}", choice.message.content);
             let content = choice.message.content.clone();
             println!("LLM response received in {:2?}", duration);
             Ok(GeneratedResponse {
