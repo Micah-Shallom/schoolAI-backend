@@ -10,12 +10,18 @@ use std::{
 use pdf_extract::extract_text;
 
 pub async fn fetch_system_prompt(prompt_file_name: &str) -> Result<String, String> {
-    let current_dir =
-        env::current_dir().map_err(|err| format!("Failed to get current directory: {}", err))?;
+    // let current_dir =
+    //     env::current_dir().map_err(|err| format!("Failed to get current directory: {}", err))?;
 
-    let base_dir = current_dir.join("src/services/prompts");
+    // let base_dir = current_dir.join("src/services/prompts");
 
+
+    // let file_path = base_dir.join(format!("{}.txt", prompt_file_name));
+
+    let base_dir = Path::new("/app/src/services/prompts");
     let file_path = base_dir.join(format!("{}.txt", prompt_file_name));
+
+    eprintln!("Looking for the prompt file at : {}", file_path.display());
 
     match fs::read_to_string(&file_path) {
         Ok(content) => Ok(content),
