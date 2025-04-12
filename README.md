@@ -1,2 +1,3 @@
 # schoolAI-backend
-This is the backend repository of School AI, an AI powered platform for creating educational content for educators
+
+[![wakatime](https://wakatime.com/badge/github/Micah-Shallom/schoolAI-backend.svg)](https://wakatime.com/badge/github/Micah-Shallom/schoolAI-backend)
