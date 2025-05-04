@@ -126,6 +126,8 @@ pub async fn generate_academic_content(
         }
     }
 
+    
+
     let response = content_service(
         &state.db,
         request,

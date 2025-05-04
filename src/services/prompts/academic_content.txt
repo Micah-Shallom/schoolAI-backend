@@ -46,7 +46,7 @@ If the content type is invalid or unclear, default to an explanatory paragraph.
 
 Text Length:
 
-Adhere strictly to the specified word count or character limit. If no length is provided, default to a concise yet comprehensive response (approximately 200–300 words).
+Adhere strictly to the specified word count or character limit. If no length is provided, default to a concise yet comprehensive response (approximately 200–300 words). 
 
 
 Topic and Standard Objective:
